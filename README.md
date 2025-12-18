@@ -1,4 +1,3 @@
-
 # Estimate Rashba-like spin splitting parameters within the parabolic-band approximation according to VASP outputs.
 
 ## introduction
@@ -43,4 +42,4 @@ nearest_VB_spin: spin polarization of the valence band immediately below the VBM
 CBM outputs are similar to VBM.
 
 ## An example 
-cd example; python Rashba_like_spin_splitting_parameters_estimate.py --vasp_output_dir ./
+cd example; python ../Rashba_like_spin_splitting_parameters_estimate.py --vasp_output_dir ./
