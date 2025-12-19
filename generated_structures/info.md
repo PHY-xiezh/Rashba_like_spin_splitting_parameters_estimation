@@ -1,0 +1,3 @@
+# This directory contains all 168,000 generated structures mentioned in our work titled "High-Throughput Inverse Design of Two-Dimensional Ferroelectric Semiconductors with Giant Rashba-like Splitting Energy".
+
+## We considered 28 $MX_2$ monolayer materials ($M$= Hf, Ta, W, Re, Os, Ir, Pt; $X$= O, S, Se, Te). For each compound, we randomly generate 6000 monolayer structures, these structures are compressed into a file named by corresponding chemical formula. For example, one can get all the 6000 HfO$_2$ monolayer structures in HfX2/HfO2.tar.gz.

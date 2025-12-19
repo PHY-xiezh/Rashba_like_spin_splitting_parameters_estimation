@@ -43,3 +43,7 @@ CBM outputs are similar to VBM.
 
 ## An example 
 cd example; python ../Rashba_like_spin_splitting_parameters_estimate.py --vasp_output_dir ./
+
+
+## Note
+All 168,000 generated structures mentioned in our work titled "High-Throughput Inverse Design of Two-Dimensional Ferroelectric Semiconductors with Giant Rashba-like Splitting Energy" are provided in "generated_structures" folder.
