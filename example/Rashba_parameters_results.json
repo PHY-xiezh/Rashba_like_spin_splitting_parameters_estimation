@@ -1,7 +1,11 @@
 {
     "band_gap": 0.9759000000000002,
     "VBM": {
-        "VBM_kpoint": "[-0.2051  0.      0.    ]",
+        "VBM_kpoint": [
+            -0.20512821,
+            0.0,
+            0.0
+        ],
         "VBM_near_high_symm_kpoint": "\\Gamma",
         "VBM_Rashba_energy (eV)": 0.20295499999999977,
         "VBM_Rashba_momentum_offset (1/Angst)": 0.2584608617298978,
@@ -18,7 +22,11 @@
         ]
     },
     "CBM": {
-        "CBM_kpoint": "[0.4701 0.0598 0.    ]",
+        "CBM_kpoint": [
+            0.47008547,
+            0.05982906,
+            0.0
+        ],
         "CBM_near_high_symm_kpoint": "M",
         "CBM_Rashba_energy (eV)": 0.008683000000000218,
         "CBM_Rashba_momentum_offset (1/Angst)": 0.06528481972187997,

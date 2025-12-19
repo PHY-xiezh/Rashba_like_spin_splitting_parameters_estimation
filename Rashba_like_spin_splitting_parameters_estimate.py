@@ -119,7 +119,7 @@ def check_vbm_cbm_split_semiconductor(rootpath):
         print("The material is conductor, empty dictionary will be return")
         vbm_dict = {}
         cbm_dict = {}
-        return {"VBM": vbm_dict, "CBM": cbm_dict}
+        return {"band_gap": 0, "VBM": vbm_dict, "CBM": cbm_dict}
 
     vbm_cbm_high_symm_info = check_vbm_cbm_high_symmetry_kpoints(band_vasprun)
     vbm_high_symm_kpoint_index = vbm_cbm_high_symm_info["VBM"]["high_symm_index"]
@@ -153,7 +153,7 @@ def check_vbm_cbm_split_semiconductor(rootpath):
 
         if vbm_neighbor_bands_number > 2:
             print(
-                "Neighbor bands number at VBM nearest high symmetry point is larger than 2, two-band-model is not suitable, an empty dictionary will be shown"
+                "Neighbor bands number at the nearest high symmetry point to VBM is larger than 2, two-band-model is not suitable, an empty dictionary will be shown"
             )
             vbm_dict = {}
         else:
@@ -175,18 +175,18 @@ def check_vbm_cbm_split_semiconductor(rootpath):
             delta_energy_vbm = abs(float(vbm_energy - high_symm_energy_vbm))
 
             vbm_kpoint = vbm_info["kpoint"].frac_coords
-            delta_k = np.linalg.norm(
+            vbm_delta_k = np.linalg.norm(
                 vbm_info["kpoint"].cart_coords
                 - bs_data.kpoints[vbm_high_symm_kpoint_index].cart_coords
             )
-            Rashba_alpha_vbm = 2 * (delta_energy_vbm) / delta_k
+            Rashba_alpha_vbm = 2 * (delta_energy_vbm) / vbm_delta_k
             vbm_dict = {
-                "VBM_kpoint": f"{vbm_kpoint}",
+                "VBM_kpoint": vbm_kpoint.tolist(),
                 "VBM_near_high_symm_kpoint": vbm_cbm_high_symm_info["VBM"][
                     "high_symm_kpoint"
                 ],
                 "VBM_Rashba_energy (eV)": delta_energy_vbm,
-                "VBM_Rashba_momentum_offset (1/Angst)": delta_k,
+                "VBM_Rashba_momentum_offset (1/Angst)": vbm_delta_k,
                 "VBM_Rashba_coefficient (eV Angst)": Rashba_alpha_vbm,
                 "VBM_spin": vbm_S.tolist(),
                 "nearest_VB_spin": vbm_S_1.tolist(),
@@ -219,7 +219,7 @@ def check_vbm_cbm_split_semiconductor(rootpath):
 
         if cbm_neighbor_bands_number > 2:
             print(
-                "Neighbor bands number at CBM nearest high symmetry point is larger than 2, two-band-model is not suitable, an empty dictionary will be shown"
+                "Neighbor bands number at the nearest high symmetry point to CBM is larger than 2, two-band-model is not suitable, an empty dictionary will be shown"
             )
             cbm_dict = {}
         else:
@@ -241,18 +241,18 @@ def check_vbm_cbm_split_semiconductor(rootpath):
             delta_energy_cbm = abs(float(-cbm_energy + high_symm_energy_cbm))
 
             cbm_kpoint = cbm_info["kpoint"].frac_coords
-            delta_k = np.linalg.norm(
+            cbm_delta_k = np.linalg.norm(
                 cbm_info["kpoint"].cart_coords
                 - bs_data.kpoints[cbm_high_symm_kpoint_index].cart_coords
             )
-            Rashba_alpha_cbm = 2 * (delta_energy_cbm) / delta_k
+            Rashba_alpha_cbm = 2 * (delta_energy_cbm) / cbm_delta_k
             cbm_dict = {
-                "CBM_kpoint": f"{cbm_kpoint}",
+                "CBM_kpoint": cbm_kpoint.tolist(),
                 "CBM_near_high_symm_kpoint": vbm_cbm_high_symm_info["CBM"][
                     "high_symm_kpoint"
                 ],
                 "CBM_Rashba_energy (eV)": delta_energy_cbm,
-                "CBM_Rashba_momentum_offset (1/Angst)": delta_k,
+                "CBM_Rashba_momentum_offset (1/Angst)": cbm_delta_k,
                 "CBM_Rashba_coefficient (eV Angst)": Rashba_alpha_cbm,
                 "CBM_spin": cbm_S.tolist(),
                 "nearest_CB_spin": cbm_S_1.tolist(),
