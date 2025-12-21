@@ -1,25 +1,23 @@
-import numpy as np
 import os
 import json
 import argparse
+
+import numpy as np
 
 from pymatgen.io.vasp import Vasprun
 from pymatgen.io.vasp.outputs import Eigenval
 from pymatgen.electronic_structure.core import Spin
 from pymatgen.io.vasp.outputs import Vasprun
 
-try:
-    from pyprocar.io.procarparser import ProcarParser
-except ImportError:
-    raise ImportError(
-        "pyprocar is not installed. Please install it using 'pip install pyprocar'."
-    )
+from pyprocar.io.procarparser import ProcarParser
+
+ENERGY_TOLERANCE_FOR_DEGENERACY = 0.001
 
 
 def get_neighbor_bands_number_at_kpoint(
     eigenvalfile, kpoint_index, to_check_energy, energy_tolerance=0.01
 ):
-    """Get the number of bands neighboring a specific energy at a given k-point."""
+    """Get the number of bands neighboring a specific energy at a given k-point under the setting energy tolerance."""
     temp_neighbor_bands_number = 0
     kpoint_eigen_energy_list = eigenvalfile.eigenvalues[Spin(1)][kpoint_index, :, 0]
     for x in kpoint_eigen_energy_list:
@@ -38,16 +36,8 @@ def check_vbm_cbm_high_symmetry_kpoints(band_vasprun):
     """
 
     bs_data = band_vasprun.get_band_structure(line_mode=True)
-    lattice = band_vasprun.final_structure.lattice.matrix
     vbm_info = bs_data.get_vbm()
     cbm_info = bs_data.get_cbm()
-    band_gap = (bs_data.get_band_gap())["energy"]
-
-    if band_gap < 1e-6:
-        print("conductor")
-        return None
-    else:
-        print("semiconductor")
 
     high_symm_k_names = []
     high_symm_k_idx = []
@@ -93,7 +83,7 @@ def check_vbm_cbm_high_symmetry_kpoints(band_vasprun):
     return vbm_cbm_high_symm_info
 
 
-def check_vbm_cbm_split_semiconductor(rootpath):
+def check_vbm_cbm_split_semiconductor(rootpath, neighbor_factor: float = 0.5):
     """_summary_
 
     Args:
@@ -144,16 +134,39 @@ def check_vbm_cbm_split_semiconductor(rootpath):
             ]
         )[0]
 
-        vbm_neighbor_bands_number = get_neighbor_bands_number_at_kpoint(
+        vbm_high_symm_degeneracy = get_neighbor_bands_number_at_kpoint(
             eigenvalfile_scf,
             vbm_high_symm_kpoint_index,
             high_symm_energy_vbm,
-            abs(vbm_energy - high_symm_energy_vbm) / 2,
+            ENERGY_TOLERANCE_FOR_DEGENERACY,
         )
 
-        if vbm_neighbor_bands_number > 2:
+        vbm_neighbor_bands_number = max(
+            [
+                get_neighbor_bands_number_at_kpoint(
+                    eigenvalfile_scf,
+                    temp_k_points_index,
+                    high_symm_energy_vbm,
+                    abs(vbm_energy - high_symm_energy_vbm) * neighbor_factor,
+                )
+                for temp_k_points_index in range(
+                    min(vbm_info["kpoint_index"][0], vbm_high_symm_kpoint_index),
+                    max(vbm_info["kpoint_index"][0], vbm_high_symm_kpoint_index) + 1,
+                )
+            ]
+        )
+
+        # print vbm_neighbor_bands_number
+        # print("vbm_neighbor_bands_number", vbm_neighbor_bands_number)
+
+        if vbm_high_symm_degeneracy != 2:
             print(
-                "Neighbor bands number at the nearest high symmetry point to VBM is larger than 2, two-band-model is not suitable, an empty dictionary will be shown"
+                "The degeneracy at the nearest high symmetry point to VBM is not 2, an empty dictionary will be shown"
+            )
+            vbm_dict = {}
+        elif vbm_neighbor_bands_number > 2:
+            print(
+                "Bands number involved along the relevant k-path is larger than 2 (VBM), two-band-model is not suitable, an empty dictionary will be shown"
             )
             vbm_dict = {}
         else:
@@ -210,16 +223,38 @@ def check_vbm_cbm_split_semiconductor(rootpath):
             ]
         )[0]
 
-        cbm_neighbor_bands_number = get_neighbor_bands_number_at_kpoint(
+        cbm_high_symm_degeneracy = get_neighbor_bands_number_at_kpoint(
             eigenvalfile_scf,
             cbm_high_symm_kpoint_index,
             high_symm_energy_cbm,
-            abs(cbm_energy - high_symm_energy_cbm) / 2,
+            ENERGY_TOLERANCE_FOR_DEGENERACY,
         )
 
-        if cbm_neighbor_bands_number > 2:
+        cbm_neighbor_bands_number = max(
+            [
+                get_neighbor_bands_number_at_kpoint(
+                    eigenvalfile_scf,
+                    temp_k_points_index,
+                    high_symm_energy_cbm,
+                    abs(cbm_energy - high_symm_energy_cbm) * neighbor_factor,
+                )
+                for temp_k_points_index in range(
+                    min(cbm_info["kpoint_index"][0], cbm_high_symm_kpoint_index),
+                    max(cbm_info["kpoint_index"][0], cbm_high_symm_kpoint_index) + 1,
+                )
+            ]
+        )
+        # print cbm_neighbor_bands_number
+        # print("cbm_neighbor_bands_number", cbm_neighbor_bands_number)
+
+        if cbm_high_symm_degeneracy != 2:
             print(
-                "Neighbor bands number at the nearest high symmetry point to CBM is larger than 2, two-band-model is not suitable, an empty dictionary will be shown"
+                "The degeneracy at the nearest high symmetry point to CBM is not 2, an empty dictionary will be shown"
+            )
+            vbm_dict = {}
+        elif cbm_neighbor_bands_number > 2:
+            print(
+                "Bands number involved along the relevant k-path is larger than 2 (CBM), two-band-model is not suitable, an empty dictionary will be shown"
             )
             cbm_dict = {}
         else:
@@ -275,10 +310,18 @@ if __name__ == "__main__":
         help="where VASP outputs exist (default: current directory)",
     )
 
+    parser.add_argument(
+        "--neighbor_bands_factor",
+        default=0.5,
+        type=float,
+        help="The factor that multiplies the Rashba-like spin-splitting energy to determine the number of bands involved along the relevant k-path.",
+    )
+
     args = parser.parse_args()
 
     rootpath = args.vasp_output_dir
-    result = check_vbm_cbm_split_semiconductor(rootpath)
+    neighbor_factor = args.neighbor_bands_factor
+    result = check_vbm_cbm_split_semiconductor(rootpath, neighbor_factor)
     print("=======================================================")
     print("Rashba-like spin splitting parameters estimation results:")
     print("band gap:", result["band_gap"])
